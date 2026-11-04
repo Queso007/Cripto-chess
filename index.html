@@ -144,6 +144,8 @@ table.payouts td, table.payouts th { padding:8px 6px; border-bottom:1px solid #2
     <p class="muted">In production, both players send the exact amount below to the escrow address and the server watches the chain until both deposits confirm. In this web build, press "I sent it" for each side to simulate confirmed deposits.</p>
     <p>Send exactly <b id="depAmount"></b> to the escrow address:</p>
     <p class="mono" id="depEscrow"></p>
+    <p><button id="depCopyBtn">Copy address</button></p>
+    <p><img id="depQR" alt="QR code for the escrow address — scan with your wallet to send" style="width:160px;height:160px;"></p>
     <p id="depMatch"></p>
     <p class="muted" id="depProgress">Deposits confirmed: 0/2</p>
     <div class="row">
@@ -867,6 +869,28 @@ function refreshChains() {
   });
   refreshSummary();
 }
+// Copy + QR helpers for the escrow address on the stakes screen.
+// QR images are embedded for configured escrow addresses only;
+// placeholder chains (X characters / all-zero address) show neither.
+var ccEscrowQR = {
+  '0xA527Dbf12329D45E4E296d75C1983bA23AAf5570': 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAXIAAAFyAQAAAADAX2ykAAACY0lEQVR4nO2bS46cMBCGv4qRZgk3mKPADXKkKDeDo/QBRjLLkWj9WdgYmM5k0hJptaOqBeLxLUr6Va6HjYl7bPp2Fw7OO++888477/xnvGVrYOqu6Z6pAxvm9dvwQH+cP5nvJUkRbJhfRC/JhvQpSJJ05P+1P86fzM8lQtdH6dKgEUiB/Vh/nD+Hb27etG+m6VUY7bvddE/P5r/z9/Ea5wb6eDX6y634T++/87/nW0kjQB+DmOxF0OasK2l5tD/On8pPZmbWgQ2A/YgAc4MNrOX0Q/1x/iQ+LcH7NJuy7ruJ+Wo6fns+/53/G94GAOYGmF+UItm6oNwTe/zWypO625Gg3AQnW6DXwiEJSxqfzX/nv7A0vOhLBdVrQYqgsZWgXdDYLq5vnTxbwGpsF+gjWd8kfAzKmru+FfJZxtIfrapmkcnzySWPMF3fyviDoGWl3h45JmbXt1K+XbAh1c/r1HmAdJdmWo/1x/lz+BKm5DKq1FJ5QSaUJOzxWx+/m29Yf2kwaGD6/tbkd7qapg7vf+vkd/mXfruLYZ+Tab2+qpufuqCUen92AO37GrBpOyn4/n6d/DF+F0gFc2SXhFP35PVzjfxBRoJy19supNIKwOcb9fJlfpUtvSyCrsL7/Llqfjs/uUXt1g7vptNP6r/zn9qu11UMWvvffNnyr9fPVfKH+iqW/Ms2f4aUjn19/k/4HMRMryWSY1iPQ1fgv/Nf8imcL+txjmE2S6fvKvHf+WIf8+9WNffKTdLudIevz5Xxu/0FIJSd4JDb4bznH3y+USd/+4fCH83/73beeeedd975E/hfdScVWJrnQXUAAAAASUVORK5CYII='
+};
+function ccIsRealEscrow(addr) {
+  return !!addr && addr.indexOf('X') === -1 && !/^0x0+$/.test(addr);
+}
+function ccCopyFallback(addr) {
+  var ta = document.createElement('textarea');
+  ta.value = addr; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); } catch (e) {}
+  document.body.removeChild(ta);
+}
+function ccCopyEscrow(addr, btn) {
+  function done() { if (btn) { var old = btn.textContent; btn.textContent = 'Copied!'; setTimeout(function () { btn.textContent = old; }, 1500); } }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(addr).then(done, function () { ccCopyFallback(addr); done(); });
+  } else { ccCopyFallback(addr); done(); }
+}
 function refreshSummary() {
   var tier = parseInt(document.getElementById('tierSel').value, 10);
   var entry = (chainsByCoin[coinSel.value] || []).find(function (c) { return c.chain === chainSel.value; });
@@ -883,7 +907,9 @@ function refreshSummary() {
     '<br>Winner receives: ' + stakes.fromMinor(win.winner, dec) + ' ' + coinSel.value +
     ' · Operator keeps: ' + stakes.fromMinor(win.operator, dec) +
     '<br>Draw: each refunded ' + stakes.fromMinor(draw.refundEach, dec) + ' · operator keeps ' + stakes.fromMinor(draw.operatorEach, dec) + ' each' +
-    '<br>Escrow address (configure before real play): <span class="mono">' + escrow + '</span>' + tagNote;
+    '<br>Operator escrow address: <span class="mono">' + escrow + '</span>' +
+    (ccIsRealEscrow(escrow) ? ' <button onclick="ccCopyEscrow(\'' + escrow + '\', this)">Copy address</button>' +
+    (ccEscrowQR[escrow] ? '<br><img src="' + ccEscrowQR[escrow] + '" alt="QR code for the escrow address — scan with your wallet to send" style="width:160px;height:160px;margin-top:8px;">' : '') : '') + tagNote;
 }
 coinSel.onchange = refreshChains; chainSel.onchange = refreshSummary;
 document.getElementById('tierSel').onchange = refreshSummary;
@@ -981,6 +1007,15 @@ if (isStake) {
   document.getElementById('depositCard').classList.remove('hidden');
   document.getElementById('depAmount').textContent = tier + ' ' + coin + ' (' + chain.toUpperCase() + ')';
   document.getElementById('depEscrow').textContent = cfg.CONFIG.escrowAddresses[chain] || '(not configured)';
+  var depAddr = cfg.CONFIG.escrowAddresses[chain] || '';
+  var depCopy = document.getElementById('depCopyBtn');
+  var depQR = document.getElementById('depQR');
+  if (ccIsRealEscrow(depAddr)) {
+    depCopy.style.display = ''; depCopy.onclick = function () { ccCopyEscrow(depAddr, depCopy); };
+    if (ccEscrowQR[depAddr]) { depQR.style.display = ''; depQR.src = ccEscrowQR[depAddr]; } else { depQR.style.display = 'none'; }
+  } else {
+    depCopy.style.display = 'none'; depQR.style.display = 'none';
+  }
   document.getElementById('depMatch').innerHTML = chain === 'xrpl'
     ? 'Destination tag: <b class="mono" id="depTag"></b> <span class="muted">(required — links your payment to this game; XRPL pattern from the xApp)</span>'
     : 'Matching: <span class="muted">register your sending address when creating the game; the server matches sender + exact token + exact amount. No destination tags exist on this chain.</span>';
