@@ -715,17 +715,18 @@ table.payouts td, table.payouts th { padding:8px 6px; border-bottom:1px solid #2
  * were verified against issuer/explorer sources at build time; re-check
  * them on the chain explorer before funding any escrow wallet.
  *
- * ESCROW ADDRESSES ARE PLACEHOLDERS. One dedicated escrow address per
- * chain, funded and controlled by the operator, must be configured here
- * (or via environment on the server) before any real stake is accepted.
+ * ESCROW AND OPERATOR ADDRESSES ARE CONFIGURED (2026-11-04). One dedicated
+ * escrow address and one operator (rake) address per chain, funded and
+ * controlled by the operator. Server-side settlement still requires the
+ * payout server (watchers + signer) before any real stake is accepted.
  * NEVER put a seed or private key in this file or any client file.
  */
 (function (root) {
   'use strict';
 
   var CONFIG = {
-    // One dedicated escrow address per chain. Placeholders — replace before
-    // accepting real stakes. The escrow wallet must hold a small balance
+    // One dedicated escrow address per chain, configured 2026-11-04.
+    // The escrow wallet must hold a small balance
     // of the chain's native gas token to pay settlement fees.
     escrowAddresses: {
       tron: 'TBgET9wfANqaUFbA1PMGuok2NmRMVVRsoz',      // TRON address — operator escrow, configured 2026-11-04
@@ -735,12 +736,12 @@ table.payouts td, table.payouts th { padding:8px 6px; border-bottom:1px solid #2
       xrpl: 'rPJYyWys3Q3DhR2bTZf8NhzmfVFPoizMRn'        // XRPL address — operator escrow, configured 2026-11-04
     },
     operatorAddress: {
-      // Operator (rake recipient) per chain — same placeholder rule.
-      tron: 'TXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-      solana: 'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX',
-      polygon: '0x0000000000000000000000000000000000000000',
-      ethereum: '0x0000000000000000000000000000000000000000',
-      xrpl: 'rXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'
+      // Operator (rake recipient) per chain — configured 2026-11-04.
+      tron: 'TGrGfLCtsuwjGyL5ooivNpqjbBpZDC4s34',      // TRON address — operator (rake), configured 2026-11-04
+      solana: '7wquMQLyAE3bmPiJS4hznZmSYn6f9USRqSdLfn1ZTxkH', // Solana address — operator (rake), configured 2026-11-04
+      polygon: '0x76ae8ee24a9D053439530F83bd152ed50b677Beb',  // Polygon address — operator (rake), configured 2026-11-04
+      ethereum: '0x76ae8ee24a9D053439530F83bd152ed50b677Beb', // Ethereum address — operator (rake), configured 2026-11-04
+      xrpl: 'rn4ZbrXPMCEPrufA6QLGsBfwu7nsw3PmUm'        // XRPL address — operator (rake), configured 2026-11-04
     },
     // Confirmation requirements (operator-chosen defaults; configurable).
     // Tron: confirmed (solidity) blocks; Solana: finalized commitment;
