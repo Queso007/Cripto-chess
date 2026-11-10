@@ -1,3 +1,5 @@
+> FLAT LAYOUT (2026-11-10): every file lives in this ONE folder — no `chains/` or `watchers/` subfolders. Upload all files in this folder into `crypto/server/` in a single GitHub upload. No `render.yaml` is used; create the Render web service manually from the dashboard (Root Directory `crypto/server`, Build `npm install`, Start `npm start`, Health Check `/health`, Plan Starter, Region Oregon).
+
 # Crypto Chess — payout service
 
 Chain watchers + operator signer that let real stablecoin stakes
